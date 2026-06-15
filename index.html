@@ -6,6 +6,10 @@
     <title>Aplikasi Pengambilan ATK</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --primary-color: #2b5876;
@@ -155,7 +159,6 @@
             right: 20px;
         }
 
-        /* --- Style Tambahan untuk Copyright/Footer --- */
         footer {
             text-align: center;
             padding: 15px 0;
@@ -221,13 +224,35 @@
                     <option value="11">November</option>
                     <option value="12">Desember</option>
                 </select>
+				// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAkWyY4ja_zb49KQLc7_qkKOjJxDuv4jzQ",
+  authDomain: "sistem-atk-healing.firebaseapp.com",
+  databaseURL: "https://sistem-atk-healing-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sistem-atk-healing",
+  storageBucket: "sistem-atk-healing.firebasestorage.app",
+  messagingSenderId: "236516939607",
+  appId: "1:236516939607:web:3951202092bf58de599012",
+  measurementId: "G-LPJ5HB2TWK"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
                 <select id="filterTahun" onchange="renderAplikasi()">
                     <option value="semua">-- Semua Tahun --</option>
                     <option value="2026">2026</option>
                     <option value="2027">2027</option>
-					<option value="2028">2028</option>
-					<option value="2029">2029</option>
-					<option value="2030">2030</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
                 </select>
             </div>
 
@@ -268,13 +293,31 @@
 </div>
 
 <script>
-    let dataRiwayat = JSON.parse(localStorage.getItem('riwayatATK_manual')) || [];
+    // ==========================================
+    // 1. KONFIGURASI FIREBASE (GANTI DENGAN MILIK ANDA)
+    // ==========================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyA1...",
+        authDomain: "proyek-atk-anda.firebaseapp.com",
+        databaseURL: "https://proyek-atk-anda-default-rtdb.firebaseio.com/",
+        projectId: "proyek-atk-anda",
+        storageBucket: "proyek-atk-anda.appspot.com",
+        messagingSenderId: "1234567890",
+        appId: "1:123456:web:abcdef"
+    };
+    
+    // Inisialisasi Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Data lokal yang akan disinkronkan dengan Firebase
+    let dataRiwayat = [];
+    // Menyimpan Id unik Firebase untuk keperluan hapus data per baris
+    let dataKeys = []; 
 
     const tglSekarang = new Date();
     document.getElementById('filterBulan').value = String(tglSekarang.getMonth() + 1).padStart(2, '0');
     document.getElementById('filterTahun').value = String(tglSekarang.getFullYear());
-    
-    // Sinkronisasi tahun dinamis pada bagian copyright
     document.getElementById('tahunCopyright').textContent = tglSekarang.getFullYear();
 
     function getFormatWaktuIndonesia() {
@@ -294,6 +337,22 @@
         };
     }
 
+    // ==========================================
+    // 2. MENGAMBIL DATA SECARA REALTIME DARI CLOUD
+    // ==========================================
+    db.ref('riwayatATK').on('value', (snapshot) => {
+        dataRiwayat = [];
+        dataKeys = [];
+        
+        if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+                dataKeys.push(childSnapshot.key); // Simpan ID unik Firebase
+                dataRiwayat.push(childSnapshot.val()); // Simpan isi data
+            });
+        }
+        renderAplikasi(); // Render otomatis setiap ada perubahan data di cloud
+    });
+
     function renderAplikasi() {
         const blnDipilih = document.getElementById('filterBulan').value;
         const thnDipilih = document.getElementById('filterTahun').value;
@@ -305,6 +364,7 @@
         if (dataRiwayat.length === 0) {
             tbodyRiwayat.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999;">Belum ada riwayat pengambilan</td></tr>`;
         } else {
+            // Tampilkan terbalik (terbaru di atas)
             for(let i = dataRiwayat.length - 1; i >= 0; i--) {
                 const riwayat = dataRiwayat[i];
                 tbodyRiwayat.innerHTML += `
@@ -316,14 +376,14 @@
                         <td>${riwayat.jumlah}</td>
                         <td style="text-align: center;">
                             <button class="btn-action btn-print" onclick="cetakSlip(${i})">Slip</button>
-                            <button class="btn-action btn-del" onclick="hapusBaris(${i})">Hapus</button>
+                            <button class="btn-action btn-del" onclick="hapusBaris('${dataKeys[i]}')">Hapus</button>
                         </td>
                     </tr>
                 `;
             }
         }
 
-        // 2. Render Daftar Tabel Ringkasan (Menampilkan riwayat teks teks satuan kustom)
+        // 2. Render Daftar Tabel Ringkasan
         const tbodyStok = document.querySelector('#tabelStok tbody');
         tbodyStok.innerHTML = '';
 
@@ -335,8 +395,6 @@
 
             if (cocokBulan && cocokTahun) {
                 let namaItem = riwayat.barang.trim().toUpperCase(); 
-                
-                // Karena jumlah mengandung huruf (kustom teks), kita kumpulkan keterangannya dalam bentuk daftar list teks
                 if (!rekapBarang[namaItem]) {
                     rekapBarang[namaItem] = [];
                 }
@@ -349,7 +407,6 @@
             tbodyStok.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#999;">Tidak ada pengambilan pada periode ini</td></tr>`;
         } else {
             keys.forEach(namaBarang => {
-                // Gabungkan riwayat catatan inputan jumlah (misal: "1 Rim, 2 Rim")
                 let gabunganKeterangan = rekapBarang[namaBarang].join(", ");
                 tbodyStok.innerHTML += `
                     <tr>
@@ -359,18 +416,16 @@
                 `;
             });
         }
-
-        localStorage.setItem('riwayatATK_manual', JSON.stringify(dataRiwayat));
     }
 
-    // Event Submit Form
+    // Event Submit Form (Simpan ke Firebase)
     document.getElementById('formAmbil').addEventListener('submit', function(e) {
         e.preventDefault();
 
         const nama = document.getElementById('nama').value;
         const seksi = document.getElementById('seksi').value;
         const barang = document.getElementById('barang').value;
-        const jumlah = document.getElementById('jumlah').value.trim(); // Menerima data string murni bebas huruf & angka
+        const jumlah = document.getElementById('jumlah').value.trim();
 
         if (jumlah === "") {
             alert("Silakan isi kolom jumlah terlebih dahulu!");
@@ -379,7 +434,8 @@
 
         const infoWaktu = getFormatWaktuIndonesia();
 
-        dataRiwayat.push({
+        // Push data baru ke Cloud Firebase
+        db.ref('riwayatATK').push({
             waktu: infoWaktu.teksTgl,
             bln: infoWaktu.bln,
             thn: infoWaktu.thn,
@@ -390,13 +446,12 @@
         });
 
         document.getElementById('formAmbil').reset();
-        renderAplikasi();
     });
 
-    function hapusBaris(index) {
+    // Hapus data tertentu berdasarkan ID unik Firebase
+    function hapusBaris(keyFirebase) {
         if(confirm("Apakah Anda yakin ingin menghapus data riwayat transaksi ini?")) {
-            dataRiwayat.splice(index, 1);
-            renderAplikasi();
+            db.ref('riwayatATK').child(keyFirebase).remove();
         }
     }
 
@@ -419,7 +474,7 @@
         doc.text(`Nama    : ${item.nama}`, 4, 25);
         doc.text(`Seksi   : ${item.seksi}`, 4, 30);
         doc.text(`Barang  : ${item.barang.toUpperCase()}`, 4, 35);
-        doc.text(`Jumlah  : ${item.jumlah}`, 4, 40); // Menampilkan kombinasi teks dan angka di nota kecil
+        doc.text(`Jumlah  : ${item.jumlah}`, 4, 40);
         doc.text("--------------------------------------------------", 4, 46);
         doc.text("Dibuat otomatis oleh Sistem ATK", 4, 52);
 
@@ -461,7 +516,7 @@
                     riwayat.nama,
                     riwayat.seksi,
                     riwayat.barang.toUpperCase(),
-                    riwayat.jumlah // Menyimpan nilai teks kustom angka+satuan ke PDF utama
+                    riwayat.jumlah
                 ]);
             }
         });
@@ -487,15 +542,12 @@
         doc.save(`Laporan_Rinci_ATK_${txtBulan}_${txtTahun}.pdf`);
     }
 
+    // Hapus total seluruh data di Firebase
     function resetAplikasi() {
-        if (confirm('Apakah Anda yakin ingin menghapus seluruh data riwayat pengambilan?')) {
-            localStorage.removeItem('riwayatATK_manual');
-            dataRiwayat = [];
-            renderAplikasi();
+        if (confirm('Apakah Anda yakin ingin menghapus seluruh data riwayat pengambilan dari Server Cloud?')) {
+            db.ref('riwayatATK').remove();
         }
     }
-
-    renderAplikasi();
 </script>
 
 </body>
