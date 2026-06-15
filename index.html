@@ -224,20 +224,7 @@
                     <option value="11">November</option>
                     <option value="12">Desember</option>
                 </select>
-const firebaseConfig = {
-  apiKey: "AIzaSyAkWyY4ja_zb49KQLc7_qkKOjJxDuv4jzQ",
-  authDomain: "sistem-atk-healing.firebaseapp.com",
-  databaseURL: "https://sistem-atk-healing-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "sistem-atk-healing",
-  storageBucket: "sistem-atk-healing.firebasestorage.app",
-  messagingSenderId: "236516939607",
-  appId: "1:236516939607:web:3951202092bf58de599012",
-  measurementId: "G-LPJ5HB2TWK"
-};
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
                 <select id="filterTahun" onchange="renderAplikasi()">
                     <option value="semua">-- Semua Tahun --</option>
                     <option value="2026">2026</option>
@@ -285,20 +272,21 @@ const analytics = getAnalytics(app);
 </div>
 
 <script>
-    // ==========================================
-    // 1. KONFIGURASI FIREBASE (GANTI DENGAN MILIK ANDA)
-    // ==========================================
+    // =========================================================
+    // 1. KONFIGURASI FIREBASE KREDENSIAL ASLI (SUDAH DIPERBAIKI)
+    // =========================================================
     const firebaseConfig = {
-        apiKey: "AIzaSyA1...",
-        authDomain: "proyek-atk-anda.firebaseapp.com",
-        databaseURL: "https://proyek-atk-anda-default-rtdb.firebaseio.com/",
-        projectId: "proyek-atk-anda",
-        storageBucket: "proyek-atk-anda.appspot.com",
-        messagingSenderId: "1234567890",
-        appId: "1:123456:web:abcdef"
+        apiKey: "AIzaSyAkWyY4ja_zb49KQLc7_qkKOjJxDuv4jzQ",
+        authDomain: "sistem-atk-healing.firebaseapp.com",
+        databaseURL: "https://sistem-atk-healing-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "sistem-atk-healing",
+        storageBucket: "sistem-atk-healing.firebasestorage.app",
+        messagingSenderId: "236516939607",
+        appId: "1:236516939607:web:3951202092bf58de599012",
+        measurementId: "G-LPJ5HB2TWK"
     };
     
-    // Inisialisasi Firebase
+    // Inisialisasi Firebase dengan format kompatibel klasik
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
